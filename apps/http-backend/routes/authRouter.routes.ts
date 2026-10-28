@@ -4,6 +4,7 @@ import {registerSchema,loginSchema, zodErrorMessage} from "@repo/common/common"
 import  { hash } from "bcrypt"
 import { compare } from "bcrypt";
 import {sign} from "jsonwebtoken"
+import { auth } from "../auth.middleware";
 export const authRouter = Router();
 
 
@@ -87,13 +88,27 @@ authRouter.post("/login", async (req,res) => {
 
 
 authRouter.post("/me", auth , async (req,res) => {
-    const { userId } = req.user.userId;
+    try {
+        const userId  = req.userId;
 
     const user = await prisma.user.findFirst({
         where : { id: userId},
         omit :{
             password: true
+        },
+        include:{
+            rating: true,
+            gameMember: {
+               include:{
+                game: true
+               }
+            }
         }
+
     })
     return res.json({message: "user found", data:{ user }})
+    } catch (error) {
+        res.status(500).json({ message:"something went wrong"})
+        return;
+    }
 })
